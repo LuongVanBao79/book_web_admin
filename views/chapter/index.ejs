@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Quản Lý Chương - <%= book.title %></title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <style>
+      /* CSS để hiển thị text dài chỉ trong 2 dòng cho gọn bảng */
+      .content-preview {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        font-size: 0.9em;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body class="bg-light">
+    <nav class="navbar navbar-dark bg-dark mb-4 shadow">
+      <div class="container">
+        <a class="navbar-brand" href="/">📚 Admin Panel</a>
+        <div class="navbar-nav ms-auto">
+          <a class="nav-link" href="/books">
+            <i class="fas fa-arrow-left"></i> Quay lại Danh sách Sách</a
+          >
+        </div>
+      </div>
+    </nav>
+
+    <div class="container">
+      <div
+        class="alert alert-info d-flex justify-content-between align-items-center"
+      >
+        <div>
+          <h4 class="mb-0">📖 Sách: <%= book.title %></h4>
+          <small>Tác giả: <%= book.author %></small>
+        </div>
+        <button
+          class="btn btn-primary"
+          data-bs-toggle="modal"
+          data-bs-target="#addChapterModal"
+        >
+          <i class="fas fa-plus"></i> Thêm Chương Mới
+        </button>
+      </div>
+
+      <div class="card shadow-sm">
+        <div class="card-body p-0">
+          <table class="table table-hover mb-0">
+            <thead class="table-dark">
+              <tr>
+                <th style="width: 20%">Tên Chương</th>
+                <th style="width: 65%">Nội dung (Preview)</th>
+                <th style="width: 15%">Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if(chapters.length > 0) { %> <% chapters.forEach(function(chap)
+              { %>
+              <tr>
+                <td class="fw-bold"><%= chap.title %></td>
+                <td>
+                  <div class="content-preview"><%= chap.content %></div>
+                </td>
+                <td>
+                  <button
+                    class="btn btn-sm btn-warning text-white btn-edit"
+                    data-id="<%= chap.id %>"
+                    data-title="<%= chap.title %>"
+                    data-content="<%= chap.content %>"
+                    data-bs-toggle="modal"
+                    data-bs-target="#editChapterModal"
+                  >
+                    <i class="fas fa-edit"></i>
+                  </button>
+
+                  <a
+                    href="/chapters/delete/<%= book.id %>/<%= chap.id %>"
+                    class="btn btn-sm btn-danger"
+                    onclick="return confirm('Xóa chương này?')"
+                  >
+                    <i class="fas fa-trash"></i>
+                  </a>
+                </td>
+              </tr>
+              <% }); %> <% } else { %>
+              <tr>
+                <td colspan="3" class="text-center py-4">
+                  Chưa có chương nào. Hãy nhập nội dung truyện!
+                </td>
+              </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="addChapterModal" tabindex="-1">
+      <div class="modal-dialog modal-xl">
+        <form action="/chapters/add" method="POST">
+          <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+              <h5 class="modal-title">Soạn Thảo Chương Mới</h5>
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+              ></button>
+            </div>
+            <div class="modal-body">
+              <input type="hidden" name="bookId" value="<%= book.id %>" />
+
+              <div class="mb-3">
+                <label class="form-label fw-bold">Tên Chương</label>
+                <input
+                  type="text"
+                  name="title"
+                  class="form-control"
+                  placeholder="Ví dụ: Chương 1: Bắt đầu"
+                  required
+                />
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-bold">Nội Dung Truyện</label>
+                <textarea
+                  name="content"
+                  class="form-control"
+                  rows="15"
+                  placeholder="Paste nội dung truyện vào đây..."
+                  required
+                ></textarea>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                data-bs-dismiss="modal"
+              >
+                Hủy
+              </button>
+              <button type="submit" class="btn btn-primary">Lưu Chương</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="modal fade" id="editChapterModal" tabindex="-1">
+      <div class="modal-dialog modal-xl">
+        <form action="/chapters/edit" method="POST">
+          <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+              <h5 class="modal-title">Chỉnh Sửa Nội Dung</h5>
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+              ></button>
+            </div>
+            <div class="modal-body">
+              <input type="hidden" name="bookId" value="<%= book.id %>" />
+              <input type="hidden" name="chapterId" id="edit_chap_id" />
+
+              <div class="mb-3">
+                <label class="form-label fw-bold">Tên Chương</label>
+                <input
+                  type="text"
+                  name="title"
+                  id="edit_title"
+                  class="form-control"
+                  required
+                />
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-bold">Nội Dung Truyện</label>
+                <textarea
+                  name="content"
+                  id="edit_content"
+                  class="form-control"
+                  rows="15"
+                  required
+                ></textarea>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                data-bs-dismiss="modal"
+              >
+                Hủy
+              </button>
+              <button type="submit" class="btn btn-success">Cập Nhật</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // Script đổ dữ liệu vào modal sửa
+      const editBtns = document.querySelectorAll(".btn-edit");
+      editBtns.forEach((btn) => {
+        btn.addEventListener("click", function () {
+          document.getElementById("edit_chap_id").value =
+            this.getAttribute("data-id");
+          document.getElementById("edit_title").value =
+            this.getAttribute("data-title");
+          document.getElementById("edit_content").value =
+            this.getAttribute("data-content");
+        });
+      });
+    </script>
+  </body>
+</html>

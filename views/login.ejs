@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Đăng nhập Admin</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background-color: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+      }
+      .login-card {
+        width: 100%;
+        max-width: 400px;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        background: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-card">
+      <h3 class="text-center mb-4">Admin Đăng Nhập</h3>
+      <div id="alertBox" class="alert alert-danger d-none"></div>
+
+      <form id="loginForm">
+        <div class="mb-3">
+          <label class="form-label">Email</label>
+          <input type="email" id="email" class="form-control" required />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Mật khẩu</label>
+          <input type="password" id="password" class="form-control" required />
+        </div>
+        <button type="submit" class="btn btn-primary w-100" id="btnLogin">
+          Đăng nhập
+        </button>
+      </form>
+    </div>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import {
+        getAuth,
+        signInWithEmailAndPassword,
+      } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+      // --- QUAN TRỌNG: Dán config của bạn vào đây ---
+      const firebaseConfig = {
+        apiKey: "AIzaSyAhy5zEiarY49cpZsns_hRU4AHZ2ZR6a48",
+        authDomain: "book-app-kotlin-3d74f.firebaseapp.com",
+        databaseURL:
+          "https://book-app-kotlin-3d74f-default-rtdb.firebaseio.com",
+        projectId: "book-app-kotlin-3d74f",
+        storageBucket: "book-app-kotlin-3d74f.firebasestorage.app",
+        messagingSenderId: "421199580843",
+        appId: "1:421199580843:web:0279b0bfef94606c58f1ee",
+        measurementId: "G-0CC0Z7DV1Z",
+      };
+      // ----------------------------------------------
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const email = document.getElementById("email").value;
+          const password = document.getElementById("password").value;
+          const btn = document.getElementById("btnLogin");
+          const alertBox = document.getElementById("alertBox");
+
+          try {
+            btn.disabled = true;
+            btn.innerText = "Đang xử lý...";
+
+            // 1. Đăng nhập với Firebase
+            const userCredential = await signInWithEmailAndPassword(
+              auth,
+              email,
+              password
+            );
+            const user = userCredential.user;
+
+            // 2. Lấy ID Token
+            const idToken = await user.getIdToken();
+
+            // 3. Gửi Token về Server Node.js để tạo Session
+            const response = await fetch("/sessionLogin", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ idToken: idToken }),
+            });
+
+            if (response.status === 200) {
+              window.location.assign("/"); // Đăng nhập thành công -> Về trang chủ
+            } else {
+              const data = await response.text();
+              throw new Error(data);
+            }
+          } catch (error) {
+            console.error(error);
+            alertBox.classList.remove("d-none");
+            alertBox.innerText = "Lỗi: " + error.message;
+            btn.disabled = false;
+            btn.innerText = "Đăng nhập";
+
+            // Đăng xuất ngay nếu lỗi
+            auth.signOut();
+          }
+        });
+    </script>
+  </body>
+</html>
