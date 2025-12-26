@@ -6,13 +6,33 @@ const path = require("path");
 require("dotenv").config();
 
 // 1. KẾT NỐI FIREBASE ADMIN
+const fs = require("fs"); // Thêm module này để kiểm tra file
+
 let serviceAccount;
-if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-  // Nếu chạy trên Render (có biến môi trường)
-  serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+
+// --- LOGIC TỰ ĐỘNG TÌM KEY ---
+
+// CÁCH 1: Tìm file ở máy Local (ngay cạnh app.js)
+const localKeyPath = path.join(__dirname, "serviceAccountKey.json");
+
+// CÁCH 2: Tìm file "Secret File" trên Render (Đường dẫn cố định của Render)
+const renderSecretPath = "/etc/secrets/serviceAccountKey.json";
+
+if (fs.existsSync(localKeyPath)) {
+  // A. Nếu đang ở máy tính cá nhân
+  serviceAccount = require(localKeyPath);
+  console.log("✅ Đang chạy LOCAL: Đã tìm thấy serviceAccountKey.json");
+} else if (fs.existsSync(renderSecretPath)) {
+  // B. Nếu đang ở trên Render (đã cấu hình Secret File)
+  serviceAccount = require(renderSecretPath);
+  console.log("✅ Đang chạy RENDER: Đã tìm thấy Secret File tại /etc/secrets/");
 } else {
-  // Nếu chạy Local (máy mình)
-  serviceAccount = require("./serviceAccountKey.json");
+  // C. Không tìm thấy đâu cả -> Lỗi
+  console.error("❌ LỖI NGHIÊM TRỌNG: Không tìm thấy file Key Firebase!");
+  console.error(
+    "👉 Hãy tạo file serviceAccountKey.json (Local) hoặc Secret File (Render)"
+  );
+  process.exit(1); // Dừng Server ngay lập tức
 }
 
 admin.initializeApp({
